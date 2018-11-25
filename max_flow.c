@@ -67,18 +67,11 @@ int peek(StackClass *Stack) {
     }
 }
 
-int el_in_arr(int *arr, int n, int el) {
-    for (int i = 0; i < n; i++)
-        if (*(arr + i) == el)
-            return 1;
-    return 0;
-}
-
 // End Stack Definition
 
 void maximum_flow(int n, int s, int t, int *cap, int *flow) {
-    StackClass *Stack = Stack_new(n * (n - 1));
     const int null = -1;
+    StackClass *Stack = Stack_new(n * (n - 1));
     int * current_res_cap  = (int *) malloc( n * n * sizeof(int));
     int * current_flow     = (int *) malloc( n * n * sizeof(int));
     int * current_path     = (int *) malloc( n     * sizeof(int));
@@ -94,7 +87,7 @@ void maximum_flow(int n, int s, int t, int *cap, int *flow) {
     for (i = 0; i < n; i++)
         for (j = 0; j < n; j++)
             *(current_res_cap + i * n + j) = *(cap + i * n + j);
-    
+    // End condition is inside while loop
     while (1) {
         // Creating a path
         push(Stack, s);
@@ -120,7 +113,9 @@ void maximum_flow(int n, int s, int t, int *cap, int *flow) {
                 if (*(current_res_cap + current_vertex * n + j) != 0) { // Only add neighbors that have residual capacity
                     if (j == t) {
                         // Early break, found path from s -> t
+                        // Add current vertex to path
                         current_path[num_path++] = current_vertex;
+                        // Add t to path
                         current_path[num_path++] = j;
                         break;
                     }
@@ -133,6 +128,7 @@ void maximum_flow(int n, int s, int t, int *cap, int *flow) {
                     if (i != num_visited) { // Check if loop was ended using break;
                         continue;
                     } else {
+                        // If valid neighbor, add to stack
                         push(Stack, j);
                     }
                 }
@@ -157,24 +153,28 @@ void maximum_flow(int n, int s, int t, int *cap, int *flow) {
                 num_path = i + 1;
             }
         }
+        // No path was found
         if (Stack->size == 0) {
-            printf("Finished\n");
             break;
         }
         // Path found, now find capacity bottle neck
-        cap_bottle_neck = 2147483647; // Use largest integer as default capacity
+        cap_bottle_neck = -1;
         for (i = 0; i < num_path - 1; i++) {
-            if (*(current_res_cap + current_path[i] * n + current_path[i+1]) < cap_bottle_neck)
+            if (cap_bottle_neck == -1 || *(current_res_cap + current_path[i] * n + current_path[i+1]) < cap_bottle_neck)
                 cap_bottle_neck = *(current_res_cap + current_path[i] * n + current_path[i+1]);
-            printf("%d - [%d] > %d -> ", current_path[i], *(current_res_cap + current_path[i] * n + current_path[i+1]), current_path[i+1]);
         }
-        printf("Bottle Neck Capacity: %d\n",cap_bottle_neck);
         // Found smallest capacity, now add it to all the edges in the path
         for (i = 0; i < num_path - 1; i++) {
-            *(current_flow + current_path[i] * n + current_path[i+1]) = cap_bottle_neck;
+            // Update flow
+            *(current_flow + current_path[i] * n + current_path[i+1]) = *(current_flow + current_path[i] * n + current_path[i+1]) + cap_bottle_neck;
+            // Update residual capacity
             *(current_res_cap + current_path[i] * n + current_path[i+1]) = *(current_res_cap + current_path[i] * n + current_path[i+1]) - cap_bottle_neck;
         }
     }
+    // Copy current_flow into flow
+    for (i = 0; i < n; i ++)
+        for (j = 0; j < n; j++)
+            *(flow + i * n + j) = *(current_flow + i * n + j);
 }
 
 int test_stack() {
@@ -213,10 +213,11 @@ int test_stack() {
 
 int main() {
     test_stack();
-  int cap[1000][1000], flow[1000][1000];
+    int max = 1000;
+  int cap[max][max], flow[max][max];
    int i,j, flowsum;
-   for(i=0; i< 1000; i++)
-     for( j =0; j< 1000; j++ )
+   for(i=0; i< max; i++)
+     for( j =0; j< max; j++ )
        cap[i][j] = 0;
      
    for(i=0; i<499; i++)
@@ -233,63 +234,67 @@ int main() {
    cap[751][753] = 5;
    cap[752][753] = 5;
    cap[753][750] = 20;
-   for( i=754; i< 999; i++)
+   for( i=754; i< max - 1; i++)
    {  cap[753][i]=1;
       cap[i][500]=3;
       cap[i][498]=5;
       cap[i][1] = 100;
    }
-   cap[900][999] = 1;
-   cap[910][999] = 1;
-   cap[920][999] = 1;
-   cap[930][999] = 1;
-   cap[940][999] = 1;
-   cap[950][999] = 1;
-   cap[960][999] = 1;
-   cap[970][999] = 1;
-   cap[980][999] = 1;
-   cap[990][999] = 1;
+   cap[900][max - 1] = 1;
+   cap[910][max - 1] = 1;
+   cap[920][max - 1] = 1;
+   cap[930][max - 1] = 1;
+   cap[940][max - 1] = 1;
+   cap[950][max - 1] = 1;
+   cap[960][max - 1] = 1;
+   cap[970][max - 1] = 1;
+   cap[980][max - 1] = 1;
+   cap[990][max - 1] = 1;
 
-    // cap[0][1] = 3;
+    // Smaller version of graph
+    // cap[0][1] = 20;
     // cap[0][2] = 5;
     // cap[2][3] = 5;
     // cap[3][4] = 5;
     // cap[4][5] = 5;
-    // cap[1][6] = 5;
-    // cap[1][7] = 5;
-    // cap[7][8] = 5;
+    // cap[5][8] = 4;
+    // cap[1][6] = 3;
+    // cap[1][7] = 12;
+    // cap[6][8] = 3;
+    // cap[7][8] = 10;
 
    printf("prepared capacity matrix, now executing maxflow code\n");
-   maximum_flow(1000,0,999,&(cap[0][0]),&(flow[0][0]));
-   for(i=0; i<=999; i++)
-     for(j=0; j<=999; j++)
+   maximum_flow(max,0,max - 1,&(cap[0][0]),&(flow[0][0]));
+   for(i=0; i<=max - 1; i++)
+     for(j=0; j<=max - 1; j++)
      {  if( flow[i][j] > cap[i][j] )
         {  printf("Capacity violated\n"); exit(0);}
      }    
-   for(i=0; i<=999; i++)
-     for(j=0; j<=999; j++)
-     {  if( flow[i][j] < 0 )
-        {  printf("Flow value negative\n"); exit(0);}
+   for(i=0; i<=max - 1; i++)
+     for(j=0; j<=max - 1; j++)
+     {  
+         if( flow[i][j] < 0 )
+        {  printf("Flow[%d][%d] = %d value negative\n", i, j, flow[i][j]); exit(0);}
      }    
-   for(i=1; i<999; i++)
+   for(i=1; i<max - 1; i++)
    {  int inflow, outflow;
       inflow = 0;
-      for( j=0; j <= 999; j++ )
+      for( j=0; j <= max - 1; j++ )
          inflow += flow[j][i];
       outflow = 0;
-      for( j=0; j <= 999; j++ )
+      for( j=0; j <= max - 1; j++ )
          outflow += flow[i][j];
       if( inflow != outflow )
         {  printf("Flow conservation fails at vertex %d\n",i); exit(0);}
    }
    printf("Flow is a valid flow\n");
    flowsum = 0;
-   for(i=0; i<=999; i++)
+   for(i=0; i<=max - 1; i++)
      flowsum += flow[0][i];
    printf("Outflow of  0 is %d, should be 10\n", flowsum);
    flowsum = 0;
-   for(i=0; i<=999; i++)
-     flowsum += flow[i][999];
+   for(i=0; i<=max - 1; i++)
+     flowsum += flow[i][max - 1];
    printf("Inflow of 999 is %d, should be 10\n", flowsum);
        
    printf("End Test\n");
